@@ -1,0 +1,150 @@
+BEGIN
+update yzx_dls 
+set 
+scoresmonth = scoresmonth+NEW.money*(select selfpercent from yzx_dls where cid = NEW.dlscid)/100
+where 
+yzx_dls.cid=NEW.dlscid;
+END
+
+BEGIN
+    DECLARE maxCid varchar(20);
+    DECLARE paramJson varchar(40);
+    select max(cid) into maxCid from `wg_statusaction`;
+    set paramJson = concat('{actionCid:' , maxCid , '}');
+    insert into wg_action(paramJson,actionName,serviceName)values(paramJson,NEW.actionName,'statusCtr.setStatus');
+END
+
+
+BEGIN
+
+	UPDATE `bs_activity` SET applyCount=(SELECT COUNT(*) FROM `bs_activitycount` WHERE ac_cid=NEW.ac_cid) WHERE cid=NEW.ac_cid;
+
+    END
+    BEGIN
+	UPDATE `bs_activity` SET applyCount=(SELECT COUNT(*) FROM `bs_activitycount` WHERE ac_cid=NEW.ac_cid) WHERE cid=NEW.ac_cid;
+    END
+    BEGIN
+	DECLARE _url VARCHAR(256);
+	set @debug = 'bdgin';
+	IF (NEW.url='' or NEW.url is null) THEN
+		set @debug1 = NEW.urlid;
+		
+		SELECT url INTO _url  from `wg_templets` where `wg_templets`.cid=NEW.urlid;
+                set @debug2 = _url;
+		SET NEW.url=_url;
+
+	END IF;
+END
+
+BEGIN
+	DECLARE
+		is_ext VARCHAR (100) ;
+	SET is_ext = (
+		SELECT
+			count(1) AS count
+		FROM
+			`wg_warehousdetail`
+		WHERE
+			wmsCode = NEW.wmsCode
+	) ;
+	IF is_ext > 0 THEN
+		UPDATE `wg_warehousdetail`
+	SET boxCount = boxCount + NEW.boxCount,
+	lastCount = `count`,
+	`count` = `count` + NEW.`count`,
+	lastWarehoseWeight = warehoseWeight,
+	warehoseinWeight = NEW.warehoseWeight,
+	lastBaseDate = unix_timestamp(now()) * 1000
+WHERE
+	wmsCode = NEW.wmsCode ;
+ELSE
+	INSERT INTO `wg_warehousdetail` (
+		wmsCode,
+		productBatch,
+		productName,
+		skuName,
+		productionTeam,
+		earthNo,
+		plantTime,
+		pickTime,
+		boxCount,
+		netweight,
+		`count`,
+		lastCount,
+		warehoseWeight,
+		lastWarehoseWeight,
+		warehoseinWeight,
+		warehoseOutWeight,
+		`level`,
+		preserveDate,
+		dealDate,
+		costunit,
+		lastBaseDate
+	)
+VALUES
+	(
+		NEW.wmsCode,
+		NEW.productBatch,
+		NEW.productName,
+		NEW.skuName,
+		NEW.productionTeam,
+		NEW.earthNo,
+		NEW.plantTime,
+		NEW.pickTime,
+		NEW.boxCount,
+		NEW.netweight,
+		NEW.`count`,
+		0,
+		0,
+		0,
+		NEW.warehoseWeight,
+		0,
+		NEW.`level`,
+		NEW.preserveDate,
+		NEW.dealDate,
+		NEW.costunit,
+		unix_timestamp(now()) * 1000
+	) ;
+END
+IF ;
+END
+
+
+
+BEGIN
+DECLARE _selfpercent  INT(100) ;
+set _selfpercent = (select  yzx_dls_view.selfpercent from yzx_dls_view where yzx_dls_view.cid = NEW.dlscid);
+update yzx_dls set scoresmonth = scoresmonth + _selfpercent*NEW.money/100, scorestotle = scorestotle + _selfpercent*NEW.money/100 where yzx_dls.cid=NEW.dlscid;
+
+
+
+BEGIN
+DECLARE _remid  INT(100) ;
+set _remid = (select yzx_dls.remid from yzx_dls where yzx_dls.cid = NEW.dlscid);
+DECLARE _nextpercent  INT(100) ;
+set _nextpercent = (select  yzx_dls_view.nextpercent from yzx_dls_view where yzx_dls_view.cid = _remid);
+update yzx_dls set scoresmonth = scoresmonth + _nextpercent*NEW.money/100, scorestotle = scorestotle + _nextpercent*NEW.money/100 where yzx_dls.cid=_remid;
+END
+
+
+BEGIN
+DECLARE _selfpercent  INT(100) ;
+set _selfpercent = (select  yzx_dls_view.selfpercent from yzx_dls_view where yzx_dls_view.cid = NEW.dlscid);
+update yzx_dls set scoresmonth = scoresmonth + _selfpercent*NEW.money/100, scorestotle = scorestotle + _selfpercent*NEW.money/100 where yzx_dls.cid=NEW.dlscid;
+END
+
+BEGIN
+DECLARE _remid  INT(100) ;
+set _remid = (select yzx_dls.remid from yzx_dls where yzx_dls.cid = NEW.dlscid);
+DECLARE _nextpercent  INT(100) ;
+set _nextpercent = (select  yzx_dls_view.nextpercent from yzx_dls_view where yzx_dls_view.cid = _remid);
+update yzx_dls set scoresmonth = scoresmonth + _nextpercent*NEW.money/100, scorestotle = scorestotle + _nextpercent*NEW.money/100 where yzx_dls.cid=_remid;
+END
+
+BEGIN
+DECLARE _remnodeid  INT(100) ;
+set _remnodeid = (select yzx_dls.remnodeid from yzx_dls where yzx_dls.cid = NEW.dlscid);
+DECLARE _mgrpercent  INT(100) ;
+set _mgrpercent = (select  yzx_dls_view.nextpercent from yzx_dls_view where yzx_dls_view.cid = _remnodeid);
+update yzx_dls set scoresmonth = scoresmonth + _mgrpercent*NEW.money/100, scorestotle = scorestotle + _mgrpercent*NEW.money/100 where yzx_dls.cid=_remnodeid;
+END
